@@ -1,0 +1,4 @@
+//command for inngest
+npx inngest-cli@1.8.0 dev
+
+//command for prisma
