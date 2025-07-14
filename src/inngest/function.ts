@@ -36,7 +36,7 @@ export const codeAgentFuntion = inngest.createFunction(
     const codeAgent = createAgent<AgentState>({
       name: "you are an expert coding agent",
       system: PROMPT,
-      model: gemini({ model: "gemini-1.5-flash-8b" }),
+      model: gemini({ model: "gemini-2.0-flash-lite" }),
       tools: [
         createTool({
           name: "terminal",
@@ -173,6 +173,7 @@ export const codeAgentFuntion = inngest.createFunction(
             content: "Somthing went wrong. please try again",
             role: "ASSISTANT",
             type: "ERRROR",
+            projectId: event.data.projectId,
           },
         });
       }
@@ -182,6 +183,7 @@ export const codeAgentFuntion = inngest.createFunction(
           content: result.state.data.summary,
           role: "ASSISTANT",
           type: "RESULT",
+          projectId: event.data.projectId,
           fragment: {
             create: {
               sanboxUrl: sandboxUrl,
