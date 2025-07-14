@@ -5,15 +5,24 @@ import {
   createTool,
   gemini,
   AnyZodType,
+  type Tool,
 } from "@inngest/agent-kit";
 import { z } from "zod";
 import { inngest } from "./client";
 import { getSandboxUrl, lastAssistandtTextMesageContent } from "./utils";
 import { PROMPT } from "@/prompt";
+import { prisma } from "@/lib/db";
 
-export const helloWorld = inngest.createFunction(
-  { id: "hello-world" },
-  { event: "test/hello.world" },
+interface AgentState {
+  summary: string;
+  files: {
+    [key: string]: string;
+  };
+}
+
+export const codeAgentFuntion = inngest.createFunction(
+  { id: "code-agent" },
+  { event: "code-agent/run" },
   async ({ event, step }) => {
     const sandboxId = await step.run("get-sandbox-id", async () => {
       const sandbox = await Sandbox.create("nextjstest2");
@@ -24,7 +33,7 @@ export const helloWorld = inngest.createFunction(
       command: z.string(),
     });
 
-    const codeAgent = createAgent({
+    const codeAgent = createAgent<AgentState>({
       name: "you are an expert coding agent",
       system: PROMPT,
       model: gemini({ model: "gemini-1.5-flash-8b" }),
@@ -66,7 +75,10 @@ export const helloWorld = inngest.createFunction(
               })
             ),
           }) as unknown as AnyZodType,
-          handler: async ({ files }, { step, network }) => {
+          handler: async (
+            { files },
+            { step, network }: Tool.Options<AgentState>
+          ) => {
             const newFiles = await step?.run(
               "createOrUpdateFiles",
               async () => {
@@ -112,7 +124,7 @@ export const helloWorld = inngest.createFunction(
               }
             });
           },
-        }) ,
+        }),
       ],
       lifecycle: {
         onResponse: async ({ result, network }) => {
@@ -130,7 +142,7 @@ export const helloWorld = inngest.createFunction(
       },
     });
 
-    const network = createNetwork({
+    const network = createNetwork<AgentState>({
       name: "codiing agent network",
       agents: [codeAgent],
       maxIter: 15,
@@ -144,11 +156,41 @@ export const helloWorld = inngest.createFunction(
     });
 
     const result = await network.run(event.data.value);
+    const isError =
+      !result.state.data.summary ||
+      Object.keys(result.state.data.files || {}).length === 0;
 
     const sandboxUrl = await step.run("get-sandbox-url", async () => {
       const sandbox = await getSandboxUrl(sandboxId);
       const host = sandbox.getHost(3000);
       return `http://${host}`;
+    });
+
+    await step.run("save-result", async () => {
+      if (isError) {
+        return await prisma.message.create({
+          data: {
+            content: "Somthing went wrong. please try again",
+            role: "ASSISTANT",
+            type: "ERRROR",
+          },
+        });
+      }
+
+      return await prisma.message.create({
+        data: {
+          content: result.state.data.summary,
+          role: "ASSISTANT",
+          type: "RESULT",
+          fragment: {
+            create: {
+              sanboxUrl: sandboxUrl,
+              title: "Fragment",
+              files: result.state.data.files,
+            },
+          },
+        },
+      });
     });
 
     return {
