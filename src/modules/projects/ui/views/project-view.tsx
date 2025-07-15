@@ -9,6 +9,7 @@ import { Suspense, useState } from "react";
 import { MessagesContainer } from "../components/messages-container";
 import { Fragment } from "@/generated/prisma";
 import { ProjectHeader } from "../components/project-header";
+import { FragmentWeb } from "../components/fragment-web";
 
 interface props {
   projectId: string;
@@ -39,7 +40,13 @@ export const ProjectView = ({ projectId }: props) => {
 
         <ResizableHandle withHandle />
 
-        <ResizablePanel defaultSize={65} minSize={50}></ResizablePanel>
+        <ResizablePanel defaultSize={65} minSize={50}>
+          {!!activeFragment && (
+            <Suspense fallback={<div>Loading...</div>}>
+              <FragmentWeb data={activeFragment} />
+            </Suspense>
+          )}
+        </ResizablePanel>
       </ResizablePanelGroup>
     </div>
   );
