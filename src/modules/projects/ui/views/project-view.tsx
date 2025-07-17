@@ -16,11 +16,14 @@ import { FragmentWeb } from "../components/fragment-web";
 import { MessagesContainer } from "../components/messages-container";
 import { ProjectHeader } from "../components/project-header";
 import { UserControl } from "@/components/user-control";
+import { useAuth } from "@clerk/nextjs";
 
 interface props {
   projectId: string;
 }
 export const ProjectView = ({ projectId }: props) => {
+  const { has } = useAuth();
+  const hasProAccess = has?.({ plan: "pro" });
   const [activeFragment, setAtciveFragment] = useState<Fragment | null>(null);
   const [tabState, settTabState] = useState<"preview" | "code">("preview");
 
@@ -66,12 +69,15 @@ export const ProjectView = ({ projectId }: props) => {
                 </TabsTrigger>
               </TabsList>
               <div className="ml-auto flex items-center gap-x-2">
-                <Button className="" asChild size={"sm"} variant={"tertiary"}>
-                  <Link href={"/pricing"}>
-                    <CrownIcon />
-                    Upgrade
-                  </Link>
-                </Button>
+                {!hasProAccess && (
+                  <Button className="" asChild size={"sm"} variant={"tertiary"}>
+                    <Link href={"/pricing"}>
+                      <CrownIcon />
+                      Upgrade
+                    </Link>
+                  </Button>
+                )}
+
                 <UserControl />
               </div>
             </div>
