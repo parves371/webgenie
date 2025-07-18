@@ -1,4 +1,5 @@
 "use client";
+import { ErrorBoundary } from "react-error-boundary";
 
 import { FileExplorer } from "@/components/file-explorer";
 import { Button } from "@/components/ui/button";
@@ -35,17 +36,20 @@ export const ProjectView = ({ projectId }: props) => {
           minSize={20}
           className="flex flex-col min-h-0"
         >
-          <Suspense fallback={<p>loading Project...</p>}>
-            <ProjectHeader projectId={projectId} />
-          </Suspense>
-
-          <Suspense fallback={<div>Loading...</div>}>
-            <MessagesContainer
-              projectId={projectId}
-              activeFragment={activeFragment}
-              setActiveFragment={setAtciveFragment}
-            />
-          </Suspense>
+          <ErrorBoundary fallback={<p>Project Header Errro</p>}>
+            <Suspense fallback={<p>loading Project...</p>}>
+              <ProjectHeader projectId={projectId} />
+            </Suspense>
+          </ErrorBoundary>
+          <ErrorBoundary fallback={<p>File Explorer Error</p>}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <MessagesContainer
+                projectId={projectId}
+                activeFragment={activeFragment}
+                setActiveFragment={setAtciveFragment}
+              />
+            </Suspense>
+          </ErrorBoundary>
         </ResizablePanel>
 
         <ResizableHandle className="hover:bg-primary transition-colors" />
