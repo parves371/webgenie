@@ -39,7 +39,7 @@ export const ProjectForm = () => {
     trpc.projects.create.mutationOptions({
       onSuccess: (data) => {
         queryClent.invalidateQueries(trpc.projects.getMany.queryOptions());
-        router.push(`/project/${data.id}`);
+        router.push(`/projects/${data.id}`);
         queryClent.invalidateQueries(trpc.usage.status.queryOptions());
       },
       onError: (error) => {
